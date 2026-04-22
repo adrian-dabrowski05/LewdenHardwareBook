@@ -58,12 +58,15 @@ export default function App() {
     if (!isSearching && !activeSection) return items;
     let list = activeSection ? items.filter(i => i.section_id === activeSection) : items;
     if (isSearching) {
-      const q = query.toLowerCase();
-      list = list.filter(i =>
-        i.part_number.toLowerCase().includes(q) ||
-        (i.description ?? '').toLowerCase().includes(q) ||
-        Object.values(i.attributes ?? {}).some(v => String(v).toLowerCase().includes(q))
-      );
+      const tokens = query.toLowerCase().split(/\s+/).filter(Boolean);
+      list = list.filter(i => {
+        const haystack = [
+          i.part_number,
+          i.description ?? '',
+          ...Object.values(i.attributes ?? {}).map(String),
+        ].join(' ').toLowerCase();
+        return tokens.every(tok => haystack.includes(tok));
+      });
     }
     return list;
   }, [items, activeSection, query, isSearching]);
