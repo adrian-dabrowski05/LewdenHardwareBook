@@ -3,6 +3,7 @@ export interface Section {
   name: string;
   slug: string;
   sort_order: number;
+  columns: string[];   // ordered attribute column names for table view
   is_active: boolean;
   created_at: string;
 }
