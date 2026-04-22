@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import type { Item, Section } from '../types';
 
 interface Props {
@@ -8,7 +7,7 @@ interface Props {
   showSection: boolean;
 }
 
-function highlight(text: string, query: string): React.ReactNode {
+export function highlight(text: string, query: string): React.ReactNode {
   if (!query || query.length < 2) return text;
   const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const regex = new RegExp(`(${escaped})`, 'gi');
@@ -18,55 +17,38 @@ function highlight(text: string, query: string): React.ReactNode {
   );
 }
 
+// Used in global search (all-sections view) — shows all attrs inline
 export default function ItemCard({ item, section, query, showSection }: Props) {
-  const [expanded, setExpanded] = useState(false);
-
   const attrs = item.attributes ?? {};
   const attrEntries = Object.entries(attrs).filter(([, v]) => v);
 
   return (
-    <div className={`item-card${expanded ? ' expanded' : ''}`}>
-      <div className="item-card-header" onClick={() => setExpanded(e => !e)}>
-        <span className="item-pn">
-          {highlight(item.part_number, query)}
-        </span>
-
+    <div className="item-row">
+      <div className="item-row-main">
+        <span className="item-pn">{highlight(item.part_number, query)}</span>
         <span className="item-desc">
           {item.description
             ? highlight(item.description, query)
-            : <em style={{ color: 'var(--text-muted)' }}>No description</em>
+            : <em style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>—</em>
           }
         </span>
-
-        {showSection && section && (
-          <span className="item-section-tag">{section.name}</span>
-        )}
-
-        <div className="item-badges">
-          {item.status === 'obsolete' && (
-            <span className="badge badge-obsolete">Obsolete</span>
+        <div className="item-row-right">
+          {showSection && section && (
+            <span className="item-section-tag">{section.name}</span>
           )}
-          {item.status === 'no_location' && (
-            <span className="badge badge-no-location">No Location</span>
-          )}
+          {item.status === 'obsolete' && <span className="badge badge-obsolete">Obsolete</span>}
+          {item.status === 'no_location' && <span className="badge badge-no-location">No Location</span>}
         </div>
-
-        <span className="item-chevron">▼</span>
       </div>
-
-      {expanded && (
-        attrEntries.length > 0 ? (
-          <div className="item-attrs">
-            {attrEntries.map(([k, v]) => (
-              <div key={k} className="attr-cell">
-                <span className="attr-key">{k}</span>
-                <span className="attr-val">{highlight(String(v), query)}</span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="item-no-attrs">No additional attributes.</div>
-        )
+      {attrEntries.length > 0 && (
+        <div className="item-row-attrs">
+          {attrEntries.map(([k, v]) => (
+            <span key={k} className="attr-pill">
+              <span className="attr-pill-key">{k}</span>
+              <span className="attr-pill-val">{highlight(String(v), query)}</span>
+            </span>
+          ))}
+        </div>
       )}
     </div>
   );
