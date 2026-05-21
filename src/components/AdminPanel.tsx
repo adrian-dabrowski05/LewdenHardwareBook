@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Section, Item, ItemStatus } from '../types';
 
@@ -19,6 +19,7 @@ const STATUSES: { value: ItemStatus; label: string }[] = [
 
 export default function AdminPanel({ sections, items, onRefresh, onToast }: Props) {
   const [tab, setTab] = useState<AdminTab>('items');
+  const lastSectionId = useRef<string>('');
 
   // ── Items state ──────────────────────────────────────────────
   const [searchQ,       setSearchQ]       = useState('');
@@ -97,8 +98,14 @@ export default function AdminPanel({ sections, items, onRefresh, onToast }: Prop
     setSavingItem(false);
     if (error) { onToast('error', 'Failed to add item.'); return; }
     onToast('success', 'Item added.');
-    setNewPN(''); setNewDesc(''); setNewSectionId('');
-    setNewStatus('active'); setNewAttrVals({});
+    lastSectionId.current = newSectionId;
+    setFilterSection(newSectionId);
+    // Reset form but keep section pre-filled for next item
+    const cols = sections.find(s => s.id === newSectionId)?.columns ?? [];
+    const blank: Record<string, string> = {};
+    cols.slice(1).forEach(c => { blank[c] = ''; });
+    setNewPN(''); setNewDesc('');
+    setNewStatus('active'); setNewAttrVals(blank);
     setShowAddItem(false);
     onRefresh();
   }
@@ -287,7 +294,18 @@ export default function AdminPanel({ sections, items, onRefresh, onToast }: Prop
                 {sections.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
               <button className="btn btn-primary" style={{ width: 'auto', padding: '0 16px', height: 38 }}
-                onClick={() => setShowAddItem(true)}>
+                onClick={() => {
+                const last = lastSectionId.current;
+                if (last) {
+                  setNewSectionId(last);
+                  const cols = sections.find(s => s.id === last)?.columns ?? [];
+                  const blank: Record<string, string> = {};
+                  cols.slice(1).forEach(c => { blank[c] = ''; });
+                  setNewAttrVals(blank);
+                  setNewDesc('');
+                }
+                setShowAddItem(true);
+              }}>
                 + Add Item
               </button>
             </div>
