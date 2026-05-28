@@ -3,7 +3,7 @@ export interface Section {
   name: string;
   slug: string;
   sort_order: number;
-  columns: string[];   // ordered attribute column names for table view
+  columns: string[];
   is_active: boolean;
   created_at: string;
 }
@@ -30,3 +30,15 @@ export interface ToastMessage {
 }
 
 export type AppView = 'search' | 'admin';
+
+export type RequestStatus = 'pending' | 'added' | 'dismissed';
+
+export interface ItemRequest {
+  id: string;
+  part_number: string | null;
+  description: string | null;
+  requester_name: string;
+  notes: string | null;
+  status: RequestStatus;
+  created_at: string;
+}
