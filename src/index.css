@@ -1103,3 +1103,152 @@ mark {
   .item-pn { min-width: 80px; }
   .item-desc { font-size: 13px; }
 }
+/* ── Append these to src/index.css ── */
+
+/* ============================================================
+   REQUEST FAB (floating action button)
+   ============================================================ */
+.request-fab {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 18px;
+  height: 44px;
+  background: var(--surface);
+  color: var(--brand);
+  border: 2px solid var(--brand);
+  border-radius: 22px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: background 0.15s, color 0.15s, transform 0.15s;
+}
+
+.request-fab:hover {
+  background: var(--brand);
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+/* ============================================================
+   REQUESTS TAB BADGE
+   ============================================================ */
+.requests-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 6px;
+  background: var(--error);
+  color: #fff;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+/* ============================================================
+   REQUEST CARDS
+   ============================================================ */
+.request-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: box-shadow 0.15s;
+}
+
+.request-card:hover { box-shadow: var(--shadow); }
+
+.request-card.request-pending  { border-left: 4px solid var(--brand); }
+.request-card.request-added    { border-left: 4px solid var(--success); opacity: 0.75; }
+.request-card.request-dismissed { border-left: 4px solid var(--border); opacity: 0.55; }
+
+.request-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px 8px;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.request-card-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.request-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.request-date {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.request-status-badge { font-size: 10px; }
+.request-badge-pending    { background: var(--brand-light); color: var(--brand); }
+.request-badge-added      { background: var(--success-bg);  color: var(--success); }
+.request-badge-dismissed  { background: var(--noloc-bg);    color: var(--noloc); }
+
+.request-card-body {
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.request-field {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.request-field-key {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  width: 90px;
+  flex-shrink: 0;
+}
+
+.request-field-val {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.request-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 10px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .request-fab {
+    bottom: 16px;
+    left: 16px;
+    height: 40px;
+    font-size: 12px;
+    padding: 0 14px;
+  }
+}
