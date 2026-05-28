@@ -7,6 +7,7 @@ import AdminLogin from './components/AdminLogin';
 import AdminPanel from './components/AdminPanel';
 import ItemCard from './components/ItemCard';
 import SectionTable from './components/SectionTable';
+import RequestButton from './components/RequestButton';
 
 export default function App() {
   const [sections, setSections] = useState<Section[]>([]);
@@ -245,6 +246,7 @@ export default function App() {
           onClose={() => setShowLogin(false)}
         />
       )}
+      <RequestButton onToast={addToast} />
       <Toast toasts={toasts} onRemove={removeToast} />
     </>
   );
