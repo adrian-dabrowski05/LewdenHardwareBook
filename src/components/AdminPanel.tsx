@@ -1,6 +1,6 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import type { Section, Item, ItemStatus } from '../types';
+import type { Section, Item, ItemStatus, ItemRequest, RequestStatus } from '../types';
 
 interface Props {
   sections: Section[];
@@ -9,7 +9,7 @@ interface Props {
   onToast: (type: 'success' | 'error', message: string) => void;
 }
 
-type AdminTab = 'items' | 'sections';
+type AdminTab = 'items' | 'sections' | 'requests';
 
 const STATUSES: { value: ItemStatus; label: string }[] = [
   { value: 'active',      label: 'Active'      },
@@ -20,6 +20,10 @@ const STATUSES: { value: ItemStatus; label: string }[] = [
 export default function AdminPanel({ sections, items, onRefresh, onToast }: Props) {
   const [tab, setTab] = useState<AdminTab>('items');
   const lastSectionId = useRef<string>('');
+
+  // ── Requests state ───────────────────────────────────────────
+  const [requests,      setRequests]      = useState<ItemRequest[]>([]);
+  const [requestsLoading, setRequestsLoading] = useState(false);
 
   // ── Items state ──────────────────────────────────────────────
   const [searchQ,       setSearchQ]       = useState('');
@@ -78,6 +82,28 @@ export default function AdminPanel({ sections, items, onRefresh, onToast }: Prop
     setEditSecId(sec.id);
     setEditSecName(sec.name);
     setEditSecCols([...sec.columns]);
+  }
+
+  async function loadRequests() {
+    setRequestsLoading(true);
+    const { data } = await supabase
+      .from('requests')
+      .select('*')
+      .order('created_at', { ascending: false });
+    setRequests((data as ItemRequest[]) ?? []);
+    setRequestsLoading(false);
+  }
+
+  useEffect(() => { loadRequests(); }, []);
+
+  async function handleRequestStatus(id: string, status: RequestStatus) {
+    await supabase.from('requests').update({ status }).eq('id', id);
+    loadRequests();
+  }
+
+  async function handleDeleteRequest(id: string) {
+    await supabase.from('requests').delete().eq('id', id);
+    loadRequests();
   }
 
   // ── Item CRUD ─────────────────────────────────────────────────
@@ -204,6 +230,9 @@ export default function AdminPanel({ sections, items, onRefresh, onToast }: Prop
         </button>
         <button className={`admin-tab${tab === 'sections' ? ' active' : ''}`} onClick={() => setTab('sections')}>
           Sections &amp; Columns ({sections.length})
+        </button>
+        <button className={`admin-tab${tab === 'requests' ? ' active' : ''}`} onClick={() => setTab('requests')}>
+          Requests{}{requests.filter(r => r.status === 'pending').length > 0 && <span className="requests-badge">{requests.filter(r => r.status === 'pending').length}</span>}
         </button>
       </div>
 
@@ -540,6 +569,106 @@ export default function AdminPanel({ sections, items, onRefresh, onToast }: Prop
           </div>
         </>
       )}
+
+      {/* ════════ REQUESTS TAB ════════ */}
+      {tab === 'requests' && (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+              {requests.filter(r => r.status === 'pending').length} pending · {requests.length} total
+            </span>
+            <button className="btn btn-ghost" style={{ height: 32, fontSize: 12 }} onClick={loadRequests}>
+              ↻ Refresh
+            </button>
+          </div>
+
+          {requestsLoading && <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading…</p>}
+
+          {!requestsLoading && requests.length === 0 && (
+            <div className="empty-state" style={{ padding: '40px 20px' }}>
+              <div className="empty-state-icon">📬</div>
+              <h3>No requests yet</h3>
+              <p>When users request missing items they'll appear here.</p>
+            </div>
+          )}
+
+          {!requestsLoading && requests.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {requests.map(req => (
+                <div key={req.id} className={`request-card request-${req.status}`}>
+                  <div className="request-card-header">
+                    <div className="request-card-meta">
+                      <span className="request-name">{req.requester_name}</span>
+                      <span className="request-date">
+                        {new Date(req.created_at).toLocaleDateString('en-GB', {
+                          day: 'numeric', month: 'short', year: 'numeric',
+                          hour: '2-digit', minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                    <span className={`badge request-status-badge request-badge-${req.status}`}>
+                      {req.status === 'pending' ? 'Pending' : req.status === 'added' ? 'Added' : 'Dismissed'}
+                    </span>
+                  </div>
+
+                  <div className="request-card-body">
+                    {req.part_number && (
+                      <div className="request-field">
+                        <span className="request-field-key">Part Number</span>
+                        <span className="request-field-val pn">{req.part_number}</span>
+                      </div>
+                    )}
+                    {req.description && (
+                      <div className="request-field">
+                        <span className="request-field-key">Description</span>
+                        <span className="request-field-val">{req.description}</span>
+                      </div>
+                    )}
+                    {req.notes && (
+                      <div className="request-field">
+                        <span className="request-field-key">Notes</span>
+                        <span className="request-field-val" style={{ color: 'var(--text-muted)' }}>{req.notes}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="request-card-actions">
+                    {req.status !== 'added' && (
+                      <button className="btn btn-secondary" style={{ height: 28, padding: '0 12px', fontSize: 12 }}
+                        onClick={() => handleRequestStatus(req.id, 'added')}>
+                        ✓ Mark as Added
+                      </button>
+                    )}
+                    {req.status !== 'dismissed' && (
+                      <button className="btn btn-ghost" style={{ height: 28, padding: '0 12px', fontSize: 12 }}
+                        onClick={() => handleRequestStatus(req.id, 'dismissed')}>
+                        Dismiss
+                      </button>
+                    )}
+                    {req.status === 'pending' && (
+                      <button className="btn btn-ghost" style={{ height: 28, padding: '0 12px', fontSize: 12 }}
+                        onClick={() => {
+                          setNewPN(req.part_number ?? '');
+                          setNewDesc(req.description ?? '');
+                          setTab('items');
+                          setShowAddItem(true);
+                          handleRequestStatus(req.id, 'added');
+                        }}>
+                        → Add to catalogue
+                      </button>
+                    )}
+                    <button className="btn btn-danger" style={{ height: 28, padding: '0 10px', fontSize: 12, marginLeft: 'auto' }}
+                      onClick={() => handleDeleteRequest(req.id)}>
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
     </div>
   );
 }
